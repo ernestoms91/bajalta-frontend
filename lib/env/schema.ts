@@ -21,6 +21,16 @@ export const envSchema = z.object({
     .positive({
       message: "JWT_REFRESH_EXPIRES_DAYS debe ser un número entero positivo",
     }),
+
+  // Departamentos
+  DEPARTAMENTOS: z.string()
+    .min(1, {
+      message: "DEPARTAMENTOS es requerido y no puede estar vacío",
+    })
+    .transform((val) => val.split(',').map(d => d.trim()).filter(d => d.length > 0))
+    .pipe(z.array(z.string()).min(1, {
+      message: "DEPARTAMENTOS debe tener al menos un departamento",
+    })),
 });
 
 export type Env = z.infer<typeof envSchema>;
