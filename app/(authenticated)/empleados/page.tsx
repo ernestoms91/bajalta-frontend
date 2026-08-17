@@ -1,4 +1,5 @@
 // app/(authenticated)/empleados/page.tsx
+import { getDepartamentos } from "@/app/actions/departamentos.actions";
 import { getAllEmpleados } from "@/app/actions/empleado.actions";
 import { EmpleadosTableClient } from "@/components/features/empleados/EmpleadosTableClient";
 
@@ -16,6 +17,7 @@ export default async function EmpleadosPage({ searchParams }: EmpleadosPageProps
   const pageSize = Number(params.size) || 15;
 
   const result = await getAllEmpleados(currentPage, pageSize);
+  const departamentos = await getDepartamentos(); 
 
   if (!result.success || !result.data) {
     throw new Error(result.error || "Error al cargar empleados");
@@ -25,6 +27,6 @@ export default async function EmpleadosPage({ searchParams }: EmpleadosPageProps
   const key = `${currentPage}-${pageSize}-${result.data.total}`;
 
   return (
-    <EmpleadosTableClient key={key} initialData={result} currentPage={currentPage} />
+    <EmpleadosTableClient key={key} initialData={result} currentPage={currentPage} departamentos={departamentos}/>
   );
 }

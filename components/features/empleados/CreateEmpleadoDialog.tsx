@@ -13,15 +13,26 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { Empleado } from "@/types/api";
 import { createEmpleado } from "@/app/actions/empleado.actions";
 
 interface CreateEmpleadoDialogProps {
   onSuccess: (empleado: Empleado) => void;
+  departamentos: string[]; 
 }
 
-export function CreateEmpleadoDialog({ onSuccess }: CreateEmpleadoDialogProps) {
+export function CreateEmpleadoDialog({ 
+  onSuccess, 
+  departamentos
+}: CreateEmpleadoDialogProps) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [formData, setFormData] = useState({
@@ -69,7 +80,7 @@ export function CreateEmpleadoDialog({ onSuccess }: CreateEmpleadoDialogProps) {
           </Button>
         }
       />
-      <DialogContent className="sm:max-w-125 bg-background border-border">
+      <DialogContent className="sm:max-w-[500px] bg-background border-border">
         <DialogHeader>
           <DialogTitle className="text-foreground">Crear Nuevo Empleado</DialogTitle>
         </DialogHeader>
@@ -156,15 +167,24 @@ export function CreateEmpleadoDialog({ onSuccess }: CreateEmpleadoDialogProps) {
             <Label htmlFor="departamento" className="text-foreground">
               Departamento
             </Label>
-            <Input
-              id="departamento"
-              required
+            <Select
               value={formData.departamento}
-              onChange={(e) =>
-                setFormData({ ...formData, departamento: e.target.value })
+              onValueChange={(value) =>
+                setFormData({ ...formData, departamento: value || "" })
               }
-              className="bg-background border-input text-foreground"
-            />
+              required
+            >
+              <SelectTrigger className="bg-background border-input text-foreground">
+                <SelectValue placeholder="Seleccionar departamento" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border-border">
+                {departamentos.map((depto) => (
+                  <SelectItem key={depto} value={depto}>
+                    {depto}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

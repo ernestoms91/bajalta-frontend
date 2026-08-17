@@ -27,6 +27,7 @@ interface EditEmpleadoDialogProps {
   onOpenChange: (open: boolean) => void;
   empleado: Empleado;
   onSuccess: (updated: Empleado) => void;
+  departamentos: string[]; // ✅ Recibir departamentos como prop
 }
 
 const estados: { value: EstadoEmpleado; label: string }[] = [
@@ -40,6 +41,7 @@ export function EditEmpleadoDialog({
   onOpenChange,
   empleado,
   onSuccess,
+  departamentos, // ✅ Usar la prop
 }: EditEmpleadoDialogProps) {
   const [isPending, startTransition] = useTransition();
   const [formData, setFormData] = useState({
@@ -48,7 +50,7 @@ export function EditEmpleadoDialog({
     ci: empleado.ci,
     telefono: empleado.telefono,
     email: empleado.email,
-    departamento: empleado.departamento,
+    departamento: empleado.departamento || "", // ✅ Manejar null
     observaciones: empleado.observaciones || "",
     estado: empleado.estado,
   });
@@ -80,7 +82,7 @@ export function EditEmpleadoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-125 bg-background border-border">
+      <DialogContent className="sm:max-w-[500px] bg-background border-border">
         <DialogHeader>
           <DialogTitle className="text-foreground">Editar Empleado</DialogTitle>
         </DialogHeader>
@@ -168,15 +170,23 @@ export function EditEmpleadoDialog({
               <Label htmlFor="departamento" className="text-foreground">
                 Departamento
               </Label>
-              <Input
-                id="departamento"
-                required
+              <Select
                 value={formData.departamento}
-                onChange={(e) =>
-                  setFormData({ ...formData, departamento: e.target.value })
+                onValueChange={(value) =>
+                  setFormData({ ...formData, departamento: value || "" })
                 }
-                className="bg-background border-input text-foreground"
-              />
+              >
+                <SelectTrigger className="bg-background border-input text-foreground">
+                  <SelectValue placeholder="Seleccionar departamento" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border-border">
+                  {departamentos.map((depto) => (
+                    <SelectItem key={depto} value={depto}>
+                      {depto}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="estado" className="text-foreground">

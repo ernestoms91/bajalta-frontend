@@ -58,20 +58,27 @@ export async function createEmpleado(
     };
 }
 
-export async function deleteEmpleado(id: number): Promise<ActionResponse<void>> {
-    const response = await fetchWithAuth<void>(`/empleados/${id}`, {
-        method: "DELETE",
+export async function darBajaEmpleado(
+    id: number,
+    motivo: string,
+    urgente: boolean = false
+): Promise<ActionResponse<Empleado>> {
+    const response = await fetchWithAuth<Empleado>(`/empleados/${id}/baja`, {
+        method: "PUT",
+        body: JSON.stringify({ motivo, urgente }),
     });
 
-    if (!response.success) {
+    if (!response.success || !response.data) {
         return {
             success: false,
-            error: response.error || "Error al eliminar el empleado",
+            error: response.error || "Error al solicitar la baja del empleado",
+            data: undefined,
         };
     }
 
     return {
         success: true,
+        data: response.data,
     };
 }
 

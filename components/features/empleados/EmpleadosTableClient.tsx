@@ -3,16 +3,24 @@
 
 import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Plus, Edit, Trash2, User, Mail, Phone, MoreVertical } from "lucide-react";
+import { Search, Plus, Edit, UserX, User, Mail, Phone, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Pagination } from "@/components/common/Pagination";
 import { Empleado } from "@/types/api";
 import { CreateEmpleadoDialog } from "./CreateEmpleadoDialog";
 import { EditEmpleadoDialog } from "./EditEmpleadoDialog";
-import { deleteEmpleado } from "@/app/actions/empleado.actions";
+import { darBajaEmpleado } from "@/app/actions/empleado.actions";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface EmpleadosTableClientProps {
   initialData: {
@@ -27,6 +35,7 @@ interface EmpleadosTableClientProps {
     };
   };
   currentPage: number;
+  departamentos: string[]
 }
 
 const estadoClasses = {
@@ -41,7 +50,7 @@ const estadoLabels = {
   DADO_BAJA: "Dado de Baja",
 };
 
-export function EmpleadosTableClient({ initialData, currentPage }: EmpleadosTableClientProps) {
+export function EmpleadosTableClient({ initialData, currentPage, departamentos }: EmpleadosTableClientProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -52,11 +61,13 @@ export function EmpleadosTableClient({ initialData, currentPage }: EmpleadosTabl
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   const [isPending, startTransition] = useTransition();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [empleadoToDelete, setEmpleadoToDelete] = useState<{
-    id: number;
-    nombre: string;
-  } | null>(null);
+  
+  // Estado para diálogo de baja
+  const [bajaDialogOpen, setBajaDialogOpen] = useState(false);
+  const [empleadoToDarBaja, setEmpleadoToDarBaja] = useState<Empleado | null>(null);
+  const [motivoBaja, setMotivoBaja] = useState("");
+  const [urgenteBaja, setUrgenteBaja] = useState(false);
+  
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [empleadoToEdit, setEmpleadoToEdit] = useState<Empleado | null>(null);
 
@@ -87,44 +98,47 @@ export function EmpleadosTableClient({ initialData, currentPage }: EmpleadosTabl
     []
   );
 
-  const handleDeleteClick = useCallback(
-    (empleadoId: number, nombre: string) => {
-      setEmpleadoToDelete({ id: empleadoId, nombre });
-      setDeleteDialogOpen(true);
-    },
-    []
-  );
+  const handleDarBajaClick = useCallback((empleado: Empleado) => {
+    setEmpleadoToDarBaja(empleado);
+    setMotivoBaja("");
+    setUrgenteBaja(false);
+    setBajaDialogOpen(true);
+  }, []);
 
-  const handleConfirmDelete = useCallback(async () => {
-    if (!empleadoToDelete) return;
+  const handleConfirmarBaja = useCallback(async () => {
+    if (!empleadoToDarBaja) return;
+
+    if (!motivoBaja.trim()) {
+      toast.error("Debes ingresar un motivo para la baja");
+      return;
+    }
 
     startTransition(async () => {
-      const result = await deleteEmpleado(empleadoToDelete.id);
+      const result = await darBajaEmpleado(
+        empleadoToDarBaja.id,
+        motivoBaja,
+        urgenteBaja
+      );
 
-      if (result.success) {
-        toast.success("Empleado eliminado correctamente");
-
-        const newEmpleados = empleados.filter(
-          (emp) => emp.id !== empleadoToDelete.id
+      if (result.success && result.data) {
+        const updatedEmpleado = result.data;
+        toast.success(`Baja solicitada para ${updatedEmpleado.nombre} ${updatedEmpleado.apellidos}`);
+        
+        setEmpleados((prev) =>
+          prev.map((emp) =>
+            emp.id === updatedEmpleado.id ? updatedEmpleado : emp
+          )
         );
-        const newTotal = totalItems - 1;
-
-        setEmpleados(newEmpleados);
-        setTotalItems(newTotal);
-
-        if (newEmpleados.length === 0 && currentPage > 1) {
-          router.push(`/empleados?page=${currentPage - 1}&size=${pageSize}`);
-        } else if (newEmpleados.length < pageSize && newTotal >= pageSize) {
-          router.push(`/empleados?page=${currentPage}&size=${pageSize}`);
-        }
+        
+        setBajaDialogOpen(false);
+        setEmpleadoToDarBaja(null);
+        setMotivoBaja("");
+        setUrgenteBaja(false);
       } else {
-        toast.error(result.error || "Error al eliminar el empleado");
+        toast.error(result.error || "Error al solicitar la baja");
       }
-
-      setDeleteDialogOpen(false);
-      setEmpleadoToDelete(null);
     });
-  }, [empleadoToDelete, empleados, totalItems, currentPage, pageSize, router]);
+  }, [empleadoToDarBaja, motivoBaja, urgenteBaja]);
 
   const handleEditClick = useCallback((empleado: Empleado) => {
     setEmpleadoToEdit(empleado);
@@ -180,7 +194,7 @@ export function EmpleadosTableClient({ initialData, currentPage }: EmpleadosTabl
                 />
               </div>
 
-              <CreateEmpleadoDialog onSuccess={handleEmpleadoCreated} />
+              <CreateEmpleadoDialog onSuccess={handleEmpleadoCreated} departamentos={departamentos} />
             </div>
           </div>
         </header>
@@ -248,9 +262,10 @@ export function EmpleadosTableClient({ initialData, currentPage }: EmpleadosTabl
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={() => handleDeleteClick(empleado.id, empleado.nombre)}
+                            onClick={() => handleDarBajaClick(empleado)}
+                            title="Solicitar baja"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <UserX className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -334,6 +349,7 @@ export function EmpleadosTableClient({ initialData, currentPage }: EmpleadosTabl
                                   size="icon"
                                   className="h-7 w-7 text-muted-foreground hover:text-foreground"
                                   onClick={() => handleEditClick(empleado)}
+                                  title="Editar"
                                 >
                                   <Edit className="h-3.5 w-3.5" />
                                 </Button>
@@ -341,9 +357,10 @@ export function EmpleadosTableClient({ initialData, currentPage }: EmpleadosTabl
                                   variant="ghost"
                                   size="icon"
                                   className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                  onClick={() => handleDeleteClick(empleado.id, empleado.nombre)}
+                                  onClick={() => handleDarBajaClick(empleado)}
+                                  title="Solicitar baja"
                                 >
-                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <UserX className="h-3.5 w-3.5" />
                                 </Button>
                               </div>
                             </td>
@@ -370,16 +387,83 @@ export function EmpleadosTableClient({ initialData, currentPage }: EmpleadosTabl
         )}
       </div>
 
-      {/* Diálogos */}
-      <ConfirmDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        title="Eliminar empleado"
-        description={`¿Estás seguro de que quieres eliminar a "${empleadoToDelete?.nombre}"?`}
-        confirmText="Eliminar"
-        destructive={true}
-        onConfirm={handleConfirmDelete}
-      />
+      {/* Diálogo para dar de baja */}
+      <Dialog open={bajaDialogOpen} onOpenChange={setBajaDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] bg-background border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              Solicitar Baja de Empleado
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Vas a solicitar la baja de <span className="font-medium text-foreground">
+                  {empleadoToDarBaja?.nombre} {empleadoToDarBaja?.apellidos}
+                </span>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Estado actual: <span className={estadoClasses[empleadoToDarBaja?.estado || "ACTIVO"]}>
+                  {estadoLabels[empleadoToDarBaja?.estado || "ACTIVO"]}
+                </span>
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="motivo" className="text-foreground">
+                Motivo de la baja <span className="text-destructive">*</span>
+              </Label>
+              <Textarea
+                id="motivo"
+                placeholder="Describe el motivo de la baja..."
+                value={motivoBaja}
+                onChange={(e) => setMotivoBaja(e.target.value)}
+                className="bg-background border-input text-foreground min-h-[100px]"
+                required
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="urgente"
+                checked={urgenteBaja}
+                onChange={(e) => setUrgenteBaja(e.target.checked)}
+                className="h-4 w-4 rounded border-input bg-background text-primary focus:ring-ring"
+              />
+              <Label htmlFor="urgente" className="text-foreground cursor-pointer">
+                Marcar como urgente
+              </Label>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setBajaDialogOpen(false);
+                setEmpleadoToDarBaja(null);
+                setMotivoBaja("");
+                setUrgenteBaja(false);
+              }}
+              className="border-border text-foreground hover:bg-muted"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmarBaja}
+              disabled={isPending || !motivoBaja.trim()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isPending ? "Solicitando..." : "Solicitar Baja"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {empleadoToEdit && (
         <EditEmpleadoDialog
@@ -387,6 +471,7 @@ export function EmpleadosTableClient({ initialData, currentPage }: EmpleadosTabl
           onOpenChange={setEditDialogOpen}
           empleado={empleadoToEdit}
           onSuccess={handleEmpleadoUpdated}
+          departamentos={departamentos}
         />
       )}
     </>
