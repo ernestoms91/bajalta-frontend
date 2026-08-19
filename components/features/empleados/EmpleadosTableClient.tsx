@@ -62,7 +62,6 @@ export function EmpleadosTableClient({ initialData, currentPage, departamentos }
 
   const [isPending, startTransition] = useTransition();
   
-  // Estado para diálogo de baja
   const [bajaDialogOpen, setBajaDialogOpen] = useState(false);
   const [empleadoToDarBaja, setEmpleadoToDarBaja] = useState<Empleado | null>(null);
   const [motivoBaja, setMotivoBaja] = useState("");
@@ -75,14 +74,13 @@ export function EmpleadosTableClient({ initialData, currentPage, departamentos }
     (newEmpleado: Empleado) => {
       setEmpleados((prev) => {
         const newList = [newEmpleado, ...prev];
-        if (newList.length > pageSize) {
-          return newList.slice(0, pageSize);
-        }
-        return newList;
+        return newList.sort((a, b) => 
+          `${a.nombre} ${a.apellidos}`.localeCompare(`${b.nombre} ${b.apellidos}`)
+        );
       });
       setTotalItems((prev) => prev + 1);
     },
-    [pageSize]
+    []
   );
 
   const handleEmpleadoUpdated = useCallback(
@@ -209,8 +207,8 @@ export function EmpleadosTableClient({ initialData, currentPage, departamentos }
             </div>
           ) : (
             <>
-              {/* 📱 Vista Móvil - Tarjetas */}
-              <div className="block sm:hidden space-y-3">
+              {/* 📱 Vista Móvil y Tablet - Tarjetas */}
+              <div className="block lg:hidden space-y-3">
                 {filteredEmpleados.map((empleado) => (
                   <div
                     key={empleado.id}
@@ -274,8 +272,8 @@ export function EmpleadosTableClient({ initialData, currentPage, departamentos }
                 ))}
               </div>
 
-              {/* 💻 Vista Desktop/Tablet - Tabla */}
-              <div className="hidden sm:block h-full">
+              {/* 💻 Vista Desktop - Tabla */}
+              <div className="hidden lg:block h-full">
                 <div className="h-full rounded-md border border-border bg-card overflow-hidden">
                   <div className="h-full overflow-auto">
                     <table className="w-full text-sm">
@@ -284,16 +282,16 @@ export function EmpleadosTableClient({ initialData, currentPage, departamentos }
                           <th className="px-3 py-2.5 text-left font-medium text-foreground whitespace-nowrap">
                             <div className="text-xs uppercase tracking-wider">Nombre</div>
                           </th>
-                          <th className="px-3 py-2.5 text-left font-medium text-foreground whitespace-nowrap hidden sm:table-cell">
+                          <th className="px-3 py-2.5 text-left font-medium text-foreground whitespace-nowrap">
                             <div className="text-xs uppercase tracking-wider">CI</div>
                           </th>
-                          <th className="px-3 py-2.5 text-left font-medium text-foreground whitespace-nowrap hidden sm:table-cell">
+                          <th className="px-3 py-2.5 text-left font-medium text-foreground whitespace-nowrap">
                             <div className="text-xs uppercase tracking-wider">Teléfono</div>
                           </th>
-                          <th className="px-3 py-2.5 text-left font-medium text-foreground whitespace-nowrap hidden md:table-cell">
+                          <th className="px-3 py-2.5 text-left font-medium text-foreground whitespace-nowrap hidden xl:table-cell">
                             <div className="text-xs uppercase tracking-wider">Email</div>
                           </th>
-                          <th className="px-3 py-2.5 text-left font-medium text-foreground whitespace-nowrap hidden lg:table-cell">
+                          <th className="px-3 py-2.5 text-left font-medium text-foreground whitespace-nowrap hidden 2xl:table-cell">
                             <div className="text-xs uppercase tracking-wider">Departamento</div>
                           </th>
                           <th className="px-3 py-2.5 text-left font-medium text-foreground whitespace-nowrap">
@@ -312,27 +310,27 @@ export function EmpleadosTableClient({ initialData, currentPage, departamentos }
                                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
                                   <User className="h-3.5 w-3.5 text-primary" />
                                 </div>
-                                <span className="font-medium text-foreground text-sm truncate max-w-[100px] sm:max-w-none">
+                                <span className="font-medium text-foreground text-sm truncate max-w-[120px]">
                                   {empleado.nombre} {empleado.apellidos}
                                 </span>
                               </div>
                             </td>
-                            <td className="px-3 py-2.5 text-foreground text-sm whitespace-nowrap hidden sm:table-cell">
+                            <td className="px-3 py-2.5 text-foreground text-sm whitespace-nowrap">
                               {empleado.ci}
                             </td>
-                            <td className="px-3 py-2.5 text-muted-foreground text-sm whitespace-nowrap hidden sm:table-cell">
+                            <td className="px-3 py-2.5 text-muted-foreground text-sm whitespace-nowrap">
                               <div className="flex items-center gap-1">
                                 <Phone className="h-3 w-3 shrink-0" />
                                 <span>{empleado.telefono}</span>
                               </div>
                             </td>
-                            <td className="px-3 py-2.5 text-muted-foreground text-sm hidden md:table-cell">
+                            <td className="px-3 py-2.5 text-muted-foreground text-sm hidden xl:table-cell">
                               <div className="flex items-center gap-1">
                                 <Mail className="h-3 w-3 shrink-0" />
                                 <span className="truncate max-w-[120px]">{empleado.email}</span>
                               </div>
                             </td>
-                            <td className="px-3 py-2.5 text-muted-foreground text-sm hidden lg:table-cell">
+                            <td className="px-3 py-2.5 text-muted-foreground text-sm hidden 2xl:table-cell">
                               <span className="truncate max-w-[100px] block">
                                 {empleado.departamento}
                               </span>
