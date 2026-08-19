@@ -10,6 +10,7 @@ export async function getAllEmpleados(
 ): Promise<ActionResponse<EmpleadosResponse>> {
     const url = `/empleados/?page=${page}&size=${size}`;
 
+    // await new Promise(resolve => setTimeout(resolve, 2000));
     const response = await fetchWithAuth<EmpleadosResponse>(url, {
         method: "GET",
     });
