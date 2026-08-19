@@ -29,6 +29,30 @@ export async function getAllEmpleados(
     };
 }
 
+export async function getEmpleadosPendientesBaja(
+    page: number = 1,
+    size: number = 10
+): Promise<ActionResponse<EmpleadosResponse>> {
+    const url = `/empleados/pendientes-baja?page=${page}&size=${size}`;
+
+    const response = await fetchWithAuth<EmpleadosResponse>(url, {
+        method: "GET",
+    });
+
+    if (!response.success || !response.data) {
+        return {
+            success: false,
+            error: response.error || "Error al obtener empleados pendientes de baja",
+            data: undefined,
+        };
+    }
+
+    return {
+        success: true,
+        data: response.data,
+    };
+}
+
 export async function createEmpleado(
     payload: {
         nombre: string;
