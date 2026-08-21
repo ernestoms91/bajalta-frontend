@@ -198,3 +198,26 @@ export async function completarBajaEmpleado(
         data: response.data,
     };
 }
+
+export async function reactivarEmpleado(
+    id: number,
+    comentarios?: string
+): Promise<ActionResponse<Empleado>> {
+    const response = await fetchWithAuth<Empleado>(`/empleados/${id}/reactivar`, {
+        method: "POST",
+        body: JSON.stringify({ comentarios: comentarios || "" }),
+    });
+
+    if (!response.success || !response.data) {
+        return {
+            success: false,
+            error: response.error || "Error al recontratar el empleado",
+            data: undefined,
+        };
+    }
+
+    return {
+        success: true,
+        data: response.data,
+    };
+}

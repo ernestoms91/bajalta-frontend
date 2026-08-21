@@ -3,7 +3,7 @@
 
 import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Plus, Edit, UserX, User, Mail, Phone, AlertCircle } from "lucide-react";
+import { Search, Plus, Edit, UserX, User, Mail, Phone, AlertCircle, UserCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -11,7 +11,7 @@ import { Pagination } from "@/components/common/Pagination";
 import { Empleado } from "@/types/api";
 import { CreateEmpleadoDialog } from "@/components/features/empleados/CreateEmpleadoDialog";
 import { EditEmpleadoDialog } from "@/components/features/empleados/EditEmpleadoDialog";
-import { darBajaEmpleado } from "@/app/actions/empleado.actions";
+import { darBajaEmpleado, reactivarEmpleado } from "@/app/actions/empleado.actions";
 import {
   Dialog,
   DialogContent,
@@ -68,6 +68,9 @@ export function EmpleadosTableClient({ initialData, currentPage, departamentos }
   const [motivoBaja, setMotivoBaja] = useState("");
   const [urgenteBaja, setUrgenteBaja] = useState(false);
   
+  const [recontratarDialogOpen, setRecontratarDialogOpen] = useState(false);
+  const [empleadoToRecontratar, setEmpleadoToRecontratar] = useState<Empleado | null>(null);
+  
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [empleadoToEdit, setEmpleadoToEdit] = useState<Empleado | null>(null);
 
@@ -104,6 +107,11 @@ export function EmpleadosTableClient({ initialData, currentPage, departamentos }
     setBajaDialogOpen(true);
   }, []);
 
+  const handleRecontratarClick = useCallback((empleado: Empleado) => {
+    setEmpleadoToRecontratar(empleado);
+    setRecontratarDialogOpen(true);
+  }, []);
+
   const handleConfirmarBaja = useCallback(async () => {
     if (!empleadoToDarBaja) return;
 
@@ -138,6 +146,30 @@ export function EmpleadosTableClient({ initialData, currentPage, departamentos }
       }
     });
   }, [empleadoToDarBaja, motivoBaja, urgenteBaja]);
+
+  const handleConfirmarRecontratar = useCallback(async () => {
+    if (!empleadoToRecontratar) return;
+
+    startTransition(async () => {
+      const result = await reactivarEmpleado(empleadoToRecontratar.id);
+
+      if (result.success && result.data) {
+        const updatedEmpleado = result.data;
+        toast.success(`Empleado ${updatedEmpleado.nombre} ${updatedEmpleado.apellidos} recontratado correctamente`);
+        
+        setEmpleados((prev) =>
+          prev.map((emp) =>
+            emp.id === updatedEmpleado.id ? updatedEmpleado : emp
+          )
+        );
+        
+        setRecontratarDialogOpen(false);
+        setEmpleadoToRecontratar(null);
+      } else {
+        toast.error(result.error || "Error al recontratar el empleado");
+      }
+    });
+  }, [empleadoToRecontratar]);
 
   const handleEditClick = useCallback((empleado: Empleado) => {
     setEmpleadoToEdit(empleado);
@@ -264,15 +296,28 @@ export function EmpleadosTableClient({ initialData, currentPage, departamentos }
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={() => handleDarBajaClick(empleado)}
-                            title="Solicitar baja"
-                          >
-                            <UserX className="h-4 w-4" />
-                          </Button>
+                          {/* ✅ Botón condicional: Recontratar o Solicitar Baja */}
+                          {empleado.estado === "DADO_BAJA" ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
+                              onClick={() => handleRecontratarClick(empleado)}
+                              title="Recontratar"
+                            >
+                              <UserCheck className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={() => handleDarBajaClick(empleado)}
+                              title="Solicitar baja"
+                            >
+                              <UserX className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -359,15 +404,28 @@ export function EmpleadosTableClient({ initialData, currentPage, departamentos }
                                 >
                                   <Edit className="h-3.5 w-3.5" />
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                  onClick={() => handleDarBajaClick(empleado)}
-                                  title="Solicitar baja"
-                                >
-                                  <UserX className="h-3.5 w-3.5" />
-                                </Button>
+                                {/* ✅ Botón condicional: Recontratar o Solicitar Baja */}
+                                {empleado.estado === "DADO_BAJA" ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
+                                    onClick={() => handleRecontratarClick(empleado)}
+                                    title="Recontratar"
+                                  >
+                                    <UserCheck className="h-3.5 w-3.5" />
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                    onClick={() => handleDarBajaClick(empleado)}
+                                    title="Solicitar baja"
+                                  >
+                                    <UserX className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -466,6 +524,51 @@ export function EmpleadosTableClient({ initialData, currentPage, departamentos }
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isPending ? "Solicitando..." : "Solicitar Baja"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ✅ Diálogo para recontratar - Solo Confirmar/Cancelar */}
+      <Dialog open={recontratarDialogOpen} onOpenChange={setRecontratarDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] bg-background border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground flex items-center gap-2">
+              <UserCheck className="h-5 w-5 text-green-600" />
+              Recontratar Empleado
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              ¿Estás seguro de que quieres recontratar a <span className="font-medium text-foreground">
+                {empleadoToRecontratar?.nombre} {empleadoToRecontratar?.apellidos}
+              </span>?
+            </p>
+            <p className="text-sm text-muted-foreground">
+              El empleado volverá a estado <span className="badge-activo">Activo</span>
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setRecontratarDialogOpen(false);
+                setEmpleadoToRecontratar(null);
+              }}
+              className="border-border text-foreground hover:bg-muted"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmarRecontratar}
+              disabled={isPending}
+              className="bg-green-600 text-white hover:bg-green-700"
+            >
+              {isPending ? "Procesando..." : "Recontratar"}
             </Button>
           </DialogFooter>
         </DialogContent>
