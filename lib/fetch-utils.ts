@@ -238,3 +238,73 @@ export async function fetchWithAuthFormData<T>(
     return handleFetchError<T>(error, method, fullUrl, "fetchWithAuthFormData");
   }
 }
+
+// ============================================
+// ✅ FETCH WITH AUTH PARA BLOB (ARCHIVOS BINARIOS)
+// ============================================
+export async function fetchWithAuthBlob(
+  url: string,
+  options?: RequestInit,
+): Promise<{ success: boolean; error?: string; data?: Blob }> {
+  const method = options?.method || "GET";
+  const fullUrl = resolveUrl(url);
+
+  try {
+    const headers = await getAuthHeaders();
+
+    if (!headers) {
+      logFetch(method, fullUrl, 401, "No token");
+      return {
+        success: false,
+        error: "UNAUTHORIZED",
+      };
+    }
+
+    // No forzar Content-Type para archivos binarios
+    const { headers: _, ...restOptions } = options || {};
+    const requestHeaders = {
+      Authorization: headers.Authorization,
+      ...(options?.headers || {}),
+    };
+
+    logFetch(method, fullUrl);
+
+    const response = await fetch(fullUrl, {
+      ...restOptions,
+      method,
+      headers: requestHeaders,
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      let errorMessage = `Error ${response.status}`;
+      try {
+        const text = await response.text();
+        errorMessage = text || errorMessage;
+      } catch {
+        // Ignorar
+      }
+      
+      logFetch(method, fullUrl, response.status, errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+
+    const blob = await response.blob();
+    logFetch(method, fullUrl, response.status);
+    
+    return {
+      success: true,
+      data: blob,
+    };
+  } catch (error) {
+    logFetch(method, fullUrl, undefined, error);
+    console.error(`[FETCH] Error en fetchWithAuthBlob:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error de conexión",
+    };
+  }
+}

@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Pagination } from "@/components/common/Pagination";
 import { Empleado } from "@/types/api";
-import { CreateEmpleadoDialog } from "./CreateEmpleadoDialog";
-import { EditEmpleadoDialog } from "./EditEmpleadoDialog";
+import { CreateEmpleadoDialog } from "@/components/features/empleados/CreateEmpleadoDialog";
+import { EditEmpleadoDialog } from "@/components/features/empleados/EditEmpleadoDialog";
 import { darBajaEmpleado } from "@/app/actions/empleado.actions";
 import {
   Dialog,
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { EmpleadosPDFButton } from "@/components/features/empleados/EmpleadosPDFButton";
 
 interface EmpleadosTableClientProps {
   initialData: {
@@ -171,9 +172,10 @@ export function EmpleadosTableClient({ initialData, currentPage, departamentos }
   return (
     <>
       <div className="flex h-full flex-col">
-        {/* Header */}
+        {/* Header - Responsive mejorado */}
         <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md px-4 py-3">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3">
+            {/* Título y contador */}
             <div className="flex items-center gap-3">
               <h1 className="text-lg font-bold md:text-xl">Empleados</h1>
               <span className="text-sm text-muted-foreground">
@@ -181,18 +183,24 @@ export function EmpleadosTableClient({ initialData, currentPage, departamentos }
               </span>
             </div>
 
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="relative">
+            {/* Acciones - responsive */}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              {/* Buscador */}
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Buscar..."
                   value={searchQuery}
                   onChange={handleSearch}
-                  className="h-9 w-full sm:w-48 pl-9 text-sm"
+                  className="h-9 w-full pl-9 text-sm"
                 />
               </div>
 
-              <CreateEmpleadoDialog onSuccess={handleEmpleadoCreated} departamentos={departamentos} />
+              {/* Botones */}
+              <div className="flex items-center gap-2">
+                <EmpleadosPDFButton />
+                <CreateEmpleadoDialog onSuccess={handleEmpleadoCreated} departamentos={departamentos} />
+              </div>
             </div>
           </div>
         </header>
@@ -310,7 +318,7 @@ export function EmpleadosTableClient({ initialData, currentPage, departamentos }
                                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
                                   <User className="h-3.5 w-3.5 text-primary" />
                                 </div>
-                                <span className="font-medium text-foreground text-sm truncate max-w-[120px]">
+                                <span className="font-medium text-foreground text-sm truncate">
                                   {empleado.nombre} {empleado.apellidos}
                                 </span>
                               </div>

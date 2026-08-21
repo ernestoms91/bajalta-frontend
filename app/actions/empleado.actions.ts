@@ -1,7 +1,7 @@
 // app/actions/empleados.actions.ts
 "use server";
 
-import { fetchWithAuth } from "@/lib/fetch-utils";
+import { fetchWithAuth, fetchWithAuthBlob } from "@/lib/fetch-utils";
 import { ActionResponse, Empleado, EmpleadosResponse } from "@/types/api";
 
 export async function getAllEmpleados(
@@ -136,5 +136,23 @@ export async function updateEmpleado(
     return {
         success: true,
         data: response.data,
+    };
+}
+
+export async function downloadReporteActivosPDF(): Promise<{ success: boolean; error?: string; blob?: Blob }> {
+    const response = await fetchWithAuthBlob("/empleados/reporte/activos/pdf", {
+        method: "GET",
+    });
+
+    if (!response.success || !response.data) {
+        return {
+            success: false,
+            error: response.error || "Error al generar el reporte PDF",
+        };
+    }
+
+    return {
+        success: true,
+        blob: response.data,
     };
 }

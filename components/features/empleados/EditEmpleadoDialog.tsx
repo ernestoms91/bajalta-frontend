@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Empleado, EstadoEmpleado } from "@/types/api";
+import { Empleado } from "@/types/api";
 import { updateEmpleado } from "@/app/actions/empleado.actions";
 
 interface EditEmpleadoDialogProps {
@@ -27,21 +27,15 @@ interface EditEmpleadoDialogProps {
   onOpenChange: (open: boolean) => void;
   empleado: Empleado;
   onSuccess: (updated: Empleado) => void;
-  departamentos: string[]; // ✅ Recibir departamentos como prop
+  departamentos: string[];
 }
-
-const estados: { value: EstadoEmpleado; label: string }[] = [
-  { value: "ACTIVO", label: "Activo" },
-  { value: "PENDIENTE_BAJA", label: "Pendiente de Baja" },
-  { value: "DADO_BAJA", label: "Dado de Baja" },
-];
 
 export function EditEmpleadoDialog({
   open,
   onOpenChange,
   empleado,
   onSuccess,
-  departamentos, // ✅ Usar la prop
+  departamentos,
 }: EditEmpleadoDialogProps) {
   const [isPending, startTransition] = useTransition();
   const [formData, setFormData] = useState({
@@ -50,9 +44,8 @@ export function EditEmpleadoDialog({
     ci: empleado.ci,
     telefono: empleado.telefono,
     email: empleado.email,
-    departamento: empleado.departamento || "", // ✅ Manejar null
+    departamento: empleado.departamento || "",
     observaciones: empleado.observaciones || "",
-    estado: empleado.estado,
   });
 
   const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -67,7 +60,6 @@ export function EditEmpleadoDialog({
         email: formData.email,
         departamento: formData.departamento,
         observaciones: formData.observaciones,
-        estado: formData.estado,
       });
       
       if (result.success && result.data) {
@@ -82,7 +74,7 @@ export function EditEmpleadoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] bg-background border-border">
+      <DialogContent className="sm:max-w-125 bg-background border-border">
         <DialogHeader>
           <DialogTitle className="text-foreground">Editar Empleado</DialogTitle>
         </DialogHeader>
@@ -183,28 +175,6 @@ export function EditEmpleadoDialog({
                   {departamentos.map((depto) => (
                     <SelectItem key={depto} value={depto}>
                       {depto}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="estado" className="text-foreground">
-                Estado
-              </Label>
-              <Select
-                value={formData.estado}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, estado: value as EstadoEmpleado })
-                }
-              >
-                <SelectTrigger className="bg-background border-input text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-background border-border">
-                  {estados.map((est) => (
-                    <SelectItem key={est.value} value={est.value}>
-                      {est.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
