@@ -156,3 +156,45 @@ export async function downloadReporteActivosPDF(): Promise<{ success: boolean; e
         blob: response.data,
     };
 }
+
+export async function activarEmpleado(
+    id: number
+): Promise<ActionResponse<Empleado>> {
+    const response = await fetchWithAuth<Empleado>(`/empleados/${id}/activar`, {
+        method: "PUT",
+    });
+
+    if (!response.success || !response.data) {
+        return {
+            success: false,
+            error: response.error || "Error al activar el empleado",
+            data: undefined,
+        };
+    }
+
+    return {
+        success: true,
+        data: response.data,
+    };
+}
+
+export async function completarBajaEmpleado(
+    id: number
+): Promise<ActionResponse<Empleado>> {
+    const response = await fetchWithAuth<Empleado>(`/empleados/${id}/completar-baja`, {
+        method: "PUT",
+    });
+
+    if (!response.success || !response.data) {
+        return {
+            success: false,
+            error: response.error || "Error al completar la baja del empleado",
+            data: undefined,
+        };
+    }
+
+    return {
+        success: true,
+        data: response.data,
+    };
+}

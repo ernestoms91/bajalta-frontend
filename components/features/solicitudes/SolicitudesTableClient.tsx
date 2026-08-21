@@ -3,13 +3,27 @@
 
 import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, User, Mail, Phone, AlertCircle, Check, Clock, UserX, UserCheck, MoreVertical } from "lucide-react";
+import {
+  Search,
+  User,
+  Mail,
+  Phone,
+  AlertCircle,
+  Check,
+  Clock,
+  UserX,
+  UserCheck,
+  MoreVertical,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Pagination } from "@/components/common/Pagination";
 import { Empleado, User as UserType } from "@/types/api";
-import { darBajaEmpleado } from "@/app/actions/empleado.actions";
+import {
+  activarEmpleado,
+  completarBajaEmpleado,
+} from "@/app/actions/empleado.actions";
 import {
   Dialog,
   DialogContent,
@@ -54,7 +68,11 @@ const estadoLabels = {
   DADO_BAJA: "Dado de Baja",
 };
 
-export function SolicitudesTableClient({ initialData, currentPage, user }: SolicitudesTableClientProps) {
+export function SolicitudesTableClient({
+  initialData,
+  currentPage,
+  user,
+}: SolicitudesTableClientProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -68,12 +86,15 @@ export function SolicitudesTableClient({ initialData, currentPage, user }: Solic
   const isAdmin = user.is_admin;
 
   const [bajaDialogOpen, setBajaDialogOpen] = useState(false);
-  const [empleadoToDarBaja, setEmpleadoToDarBaja] = useState<Empleado | null>(null);
+  const [empleadoToDarBaja, setEmpleadoToDarBaja] = useState<Empleado | null>(
+    null,
+  );
   const [motivoBaja, setMotivoBaja] = useState("");
   const [urgenteBaja, setUrgenteBaja] = useState(false);
 
   const [reactivarDialogOpen, setReactivarDialogOpen] = useState(false);
-  const [empleadoToReactivar, setEmpleadoToReactivar] = useState<Empleado | null>(null);
+  const [empleadoToReactivar, setEmpleadoToReactivar] =
+    useState<Empleado | null>(null);
 
   const handleDarBajaClick = useCallback((empleado: Empleado) => {
     setEmpleadoToDarBaja(empleado);
@@ -90,54 +111,62 @@ export function SolicitudesTableClient({ initialData, currentPage, user }: Solic
   const handleConfirmarBaja = useCallback(async () => {
     if (!empleadoToDarBaja) return;
 
-    if (!motivoBaja.trim()) {
-      toast.error("Debes ingresar un motivo para la baja");
-      return;
-    }
-
     startTransition(async () => {
-      const result = await darBajaEmpleado(
-        empleadoToDarBaja.id,
-        motivoBaja,
-        urgenteBaja
-      );
+      const result = await completarBajaEmpleado(empleadoToDarBaja.id);
 
       if (result.success && result.data) {
-        const updatedEmpleado = result.data;
-        toast.success(`Baja solicitada para ${updatedEmpleado.nombre} ${updatedEmpleado.apellidos}`);
-        
-        setSolicitudes((prev) => prev.filter((emp) => emp.id !== updatedEmpleado.id));
+        const completado = result.data;
+        toast.success(
+          `Baja completada para ${completado.nombre} ${completado.apellidos}`,
+        );
+
+        setSolicitudes((prev) =>
+          prev.filter((emp) => emp.id !== completado.id),
+        );
         setTotalItems((prev) => prev - 1);
-        
+
         setBajaDialogOpen(false);
         setEmpleadoToDarBaja(null);
         setMotivoBaja("");
         setUrgenteBaja(false);
       } else {
-        toast.error(result.error || "Error al solicitar la baja");
+        toast.error(result.error || "Error al completar la baja");
       }
     });
-  }, [empleadoToDarBaja, motivoBaja, urgenteBaja]);
+  }, [empleadoToDarBaja]);
 
   const handleConfirmarReactivar = useCallback(async () => {
     if (!empleadoToReactivar) return;
 
     startTransition(async () => {
-      toast.success(`Empleado ${empleadoToReactivar.nombre} ${empleadoToReactivar.apellidos} reactivado correctamente`);
-      setSolicitudes((prev) => prev.filter((emp) => emp.id !== empleadoToReactivar.id));
-      setTotalItems((prev) => prev - 1);
-      setReactivarDialogOpen(false);
-      setEmpleadoToReactivar(null);
+      const result = await activarEmpleado(empleadoToReactivar.id);
+
+      if (result.success && result.data) {
+        const updatedEmpleado = result.data;
+        toast.success(
+          `Empleado ${updatedEmpleado.nombre} ${updatedEmpleado.apellidos} reactivado correctamente`,
+        );
+
+        setSolicitudes((prev) =>
+          prev.filter((emp) => emp.id !== updatedEmpleado.id),
+        );
+        setTotalItems((prev) => prev - 1);
+        setReactivarDialogOpen(false);
+        setEmpleadoToReactivar(null);
+      } else {
+        toast.error(result.error || "Error al reactivar el empleado");
+      }
     });
   }, [empleadoToReactivar]);
 
-  const filteredSolicitudes = searchQuery.trim() === ""
-    ? solicitudes
-    : solicitudes.filter((emp) =>
-        `${emp.nombre} ${emp.apellidos} ${emp.ci} ${emp.departamento} ${emp.motivo_baja || ""}`
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase())
-      );
+  const filteredSolicitudes =
+    searchQuery.trim() === ""
+      ? solicitudes
+      : solicitudes.filter((emp) =>
+          `${emp.nombre} ${emp.apellidos} ${emp.ci} ${emp.departamento} ${emp.motivo_baja || ""}`
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()),
+        );
 
   const handlePageChange = (page: number) => {
     router.push(`/solicitudes?page=${page}&size=${pageSize}`);
@@ -191,7 +220,9 @@ export function SolicitudesTableClient({ initialData, currentPage, user }: Solic
               <div className="text-center">
                 <Check className="h-12 w-12 text-green-500 mx-auto mb-3" />
                 <p className="text-muted-foreground">
-                  {searchQuery ? "No se encontraron solicitudes" : "No hay solicitudes de baja pendientes"}
+                  {searchQuery
+                    ? "No se encontraron solicitudes"
+                    : "No hay solicitudes de baja pendientes"}
                 </p>
               </div>
             </div>
@@ -216,7 +247,9 @@ export function SolicitudesTableClient({ initialData, currentPage, user }: Solic
                         </div>
                         <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                           <p className="flex items-center gap-1">
-                            <span className="font-medium text-foreground">CI:</span>
+                            <span className="font-medium text-foreground">
+                              CI:
+                            </span>
                             {solicitud.ci}
                           </p>
                           <p className="flex items-center gap-1">
@@ -228,13 +261,17 @@ export function SolicitudesTableClient({ initialData, currentPage, user }: Solic
                             <span className="truncate">{solicitud.email}</span>
                           </p>
                           <p className="flex items-center gap-1">
-                            <span className="font-medium text-foreground">Depto:</span>
+                            <span className="font-medium text-foreground">
+                              Depto:
+                            </span>
                             {solicitud.departamento}
                           </p>
                           {solicitud.motivo_baja && (
                             <p className="flex items-start gap-1 text-amber-600 dark:text-amber-400">
                               <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                              <span className="text-xs">{solicitud.motivo_baja}</span>
+                              <span className="text-xs">
+                                {solicitud.motivo_baja}
+                              </span>
                             </p>
                           )}
                         </div>
@@ -243,17 +280,20 @@ export function SolicitudesTableClient({ initialData, currentPage, user }: Solic
                         <span className={estadoClasses[solicitud.estado]}>
                           {estadoLabels[solicitud.estado]}
                         </span>
-                        {/* ✅ DropdownMenu sin asChild */}
                         <DropdownMenu>
                           <DropdownMenuTrigger
                             render={
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                              >
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             }
                           />
                           <DropdownMenuContent align="end" className="w-40">
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               onClick={() => handleReactivarClick(solicitud)}
                               className="text-green-600 cursor-pointer"
                             >
@@ -261,7 +301,7 @@ export function SolicitudesTableClient({ initialData, currentPage, user }: Solic
                               Reactivar
                             </DropdownMenuItem>
                             {isAdmin && (
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 onClick={() => handleDarBajaClick(solicitud)}
                                 className="text-destructive cursor-pointer"
                               >
@@ -285,31 +325,48 @@ export function SolicitudesTableClient({ initialData, currentPage, user }: Solic
                       <thead className="sticky top-0 bg-muted/50 z-10">
                         <tr>
                           <th className="px-3 py-2.5 text-left font-medium text-foreground whitespace-nowrap">
-                            <div className="text-xs uppercase tracking-wider">Empleado</div>
+                            <div className="text-xs uppercase tracking-wider">
+                              Empleado
+                            </div>
                           </th>
                           <th className="px-3 py-2.5 text-left font-medium text-foreground whitespace-nowrap">
-                            <div className="text-xs uppercase tracking-wider">CI</div>
+                            <div className="text-xs uppercase tracking-wider">
+                              CI
+                            </div>
                           </th>
                           <th className="px-3 py-2.5 text-left font-medium text-foreground whitespace-nowrap hidden xl:table-cell">
-                            <div className="text-xs uppercase tracking-wider">Email</div>
+                            <div className="text-xs uppercase tracking-wider">
+                              Email
+                            </div>
                           </th>
                           <th className="px-3 py-2.5 text-left font-medium text-foreground whitespace-nowrap hidden 2xl:table-cell">
-                            <div className="text-xs uppercase tracking-wider">Departamento</div>
+                            <div className="text-xs uppercase tracking-wider">
+                              Departamento
+                            </div>
                           </th>
                           <th className="px-3 py-2.5 text-left font-medium text-foreground whitespace-nowrap">
-                            <div className="text-xs uppercase tracking-wider">Motivo</div>
+                            <div className="text-xs uppercase tracking-wider">
+                              Motivo
+                            </div>
                           </th>
                           <th className="px-3 py-2.5 text-left font-medium text-foreground whitespace-nowrap">
-                            <div className="text-xs uppercase tracking-wider">Estado</div>
+                            <div className="text-xs uppercase tracking-wider">
+                              Estado
+                            </div>
                           </th>
                           <th className="px-3 py-2.5 text-right font-medium text-foreground whitespace-nowrap">
-                            <div className="text-xs uppercase tracking-wider">Acciones</div>
+                            <div className="text-xs uppercase tracking-wider">
+                              Acciones
+                            </div>
                           </th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredSolicitudes.map((solicitud) => (
-                          <tr key={solicitud.id} className="border-t border-border hover:bg-muted/30 transition-colors">
+                          <tr
+                            key={solicitud.id}
+                            className="border-t border-border hover:bg-muted/30 transition-colors"
+                          >
                             <td className="px-3 py-2.5">
                               <div className="flex items-center gap-2">
                                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
@@ -326,7 +383,9 @@ export function SolicitudesTableClient({ initialData, currentPage, user }: Solic
                             <td className="px-3 py-2.5 text-muted-foreground text-sm hidden xl:table-cell">
                               <div className="flex items-center gap-1">
                                 <Mail className="h-3 w-3 shrink-0" />
-                                <span className="truncate max-w-[120px]">{solicitud.email}</span>
+                                <span className="truncate max-w-[120px]">
+                                  {solicitud.email}
+                                </span>
                               </div>
                             </td>
                             <td className="px-3 py-2.5 text-muted-foreground text-sm hidden 2xl:table-cell">
@@ -346,7 +405,9 @@ export function SolicitudesTableClient({ initialData, currentPage, user }: Solic
                                   variant="outline"
                                   size="sm"
                                   className="h-7 text-xs border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
-                                  onClick={() => handleReactivarClick(solicitud)}
+                                  onClick={() =>
+                                    handleReactivarClick(solicitud)
+                                  }
                                 >
                                   <UserCheck className="h-3.5 w-3.5 mr-1" />
                                   Reactivar
@@ -356,7 +417,9 @@ export function SolicitudesTableClient({ initialData, currentPage, user }: Solic
                                     variant="outline"
                                     size="sm"
                                     className="h-7 text-xs border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                                    onClick={() => handleDarBajaClick(solicitud)}
+                                    onClick={() =>
+                                      handleDarBajaClick(solicitud)
+                                    }
                                   >
                                     <UserX className="h-3.5 w-3.5 mr-1" />
                                     Dar de Baja
@@ -396,15 +459,18 @@ export function SolicitudesTableClient({ initialData, currentPage, user }: Solic
               Reactivar Empleado
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">
-              ¿Estás seguro de que quieres reactivar a <span className="font-medium text-foreground">
+              ¿Estás seguro de que quieres reactivar a{" "}
+              <span className="font-medium text-foreground">
                 {empleadoToReactivar?.nombre} {empleadoToReactivar?.apellidos}
-              </span>?
+              </span>
+              ?
             </p>
             <p className="text-sm text-muted-foreground">
-              El empleado volverá a estado <span className="badge-activo">Activo</span>
+              El empleado volverá a estado{" "}
+              <span className="badge-activo">Activo</span>
             </p>
           </div>
 
@@ -439,50 +505,24 @@ export function SolicitudesTableClient({ initialData, currentPage, user }: Solic
             <DialogHeader>
               <DialogTitle className="text-foreground flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-destructive" />
-                Confirmar Baja de Empleado
+                Completar Baja de Empleado
               </DialogTitle>
             </DialogHeader>
-            
+
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                ¿Estás seguro de que quieres completar la baja de{" "}
+                <span className="font-medium text-foreground">
+                  {empleadoToDarBaja?.nombre} {empleadoToDarBaja?.apellidos}
+                </span>
+                ?
+              </p>
+              {empleadoToDarBaja?.motivo_baja && (
                 <p className="text-sm text-muted-foreground">
-                  Vas a dar de baja a <span className="font-medium text-foreground">
-                    {empleadoToDarBaja?.nombre} {empleadoToDarBaja?.apellidos}
-                  </span>
+                  <span className="font-medium text-foreground">Motivo:</span>{" "}
+                  {empleadoToDarBaja.motivo_baja}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  Estado actual: <span className={estadoClasses[empleadoToDarBaja?.estado || "PENDIENTE_BAJA"]}>
-                    {estadoLabels[empleadoToDarBaja?.estado || "PENDIENTE_BAJA"]}
-                  </span>
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="motivo" className="text-foreground">
-                  Motivo de la baja <span className="text-destructive">*</span>
-                </Label>
-                <Textarea
-                  id="motivo"
-                  placeholder="Describe el motivo de la baja..."
-                  value={motivoBaja}
-                  onChange={(e) => setMotivoBaja(e.target.value)}
-                  className="bg-background border-input text-foreground min-h-[100px]"
-                  required
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="urgente"
-                  checked={urgenteBaja}
-                  onChange={(e) => setUrgenteBaja(e.target.checked)}
-                  className="h-4 w-4 rounded border-input bg-background text-primary focus:ring-ring"
-                />
-                <Label htmlFor="urgente" className="text-foreground cursor-pointer">
-                  Marcar como urgente
-                </Label>
-              </div>
+              )}
             </div>
 
             <DialogFooter>
@@ -492,8 +532,6 @@ export function SolicitudesTableClient({ initialData, currentPage, user }: Solic
                 onClick={() => {
                   setBajaDialogOpen(false);
                   setEmpleadoToDarBaja(null);
-                  setMotivoBaja("");
-                  setUrgenteBaja(false);
                 }}
                 className="border-border text-foreground hover:bg-muted"
               >
@@ -502,10 +540,10 @@ export function SolicitudesTableClient({ initialData, currentPage, user }: Solic
               <Button
                 type="button"
                 onClick={handleConfirmarBaja}
-                disabled={isPending || !motivoBaja.trim()}
+                disabled={isPending}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                {isPending ? "Procesando..." : "Confirmar Baja"}
+                {isPending ? "Procesando..." : "Completar Baja"}
               </Button>
             </DialogFooter>
           </DialogContent>
