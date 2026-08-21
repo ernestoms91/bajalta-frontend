@@ -24,7 +24,8 @@ export default function Home() {
     FormData
   >(loginAction, initialState);
 
-  const errorMessage = typeof state?.error === "string" ? state.error : undefined;
+  const errorMessage =
+    typeof state?.error === "string" ? state.error : undefined;
 
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
@@ -42,19 +43,34 @@ export default function Home() {
             </div>
           </div>
           <div className="relative z-10">
-            <h2 className="text-3xl font-bold mb-2">Optimizando Recursos Humanos.</h2>
+            <h2 className="text-3xl font-bold mb-2">
+              Optimizando Recursos Humanos.
+            </h2>
             <p className="text-base opacity-90 max-w-[400px]">
-              Accede a tu dashboard completo para la gestión de empleados, 
-              procesamiento de nóminas y análisis de rendimiento organizacional.
+              Gestiona las altas y bajas de empleados de forma rápida y
+              eficiente. Controla todo el ciclo de contratación y desvinculación
+              laboral.
             </p>
           </div>
           <div className="relative z-10 flex items-center gap-4">
             <div className="flex -space-x-2">
-              <img className="w-8 h-8 rounded-full border-2 border-primary object-cover" src="https://i.pravatar.cc/32?img=1" alt="Usuario" />
-              <img className="w-8 h-8 rounded-full border-2 border-primary object-cover" src="https://i.pravatar.cc/32?img=2" alt="Usuario" />
-              <img className="w-8 h-8 rounded-full border-2 border-primary object-cover" src="https://i.pravatar.cc/32?img=3" alt="Usuario" />
+              <img
+                className="w-8 h-8 rounded-full border-2 border-primary object-cover"
+                src="https://i.pravatar.cc/32?img=1"
+                alt="Usuario"
+              />
+              <img
+                className="w-8 h-8 rounded-full border-2 border-primary object-cover"
+                src="https://i.pravatar.cc/32?img=2"
+                alt="Usuario"
+              />
+              <img
+                className="w-8 h-8 rounded-full border-2 border-primary object-cover"
+                src="https://i.pravatar.cc/32?img=3"
+                alt="Usuario"
+              />
             </div>
-            <span className="text-sm font-medium">Confían 500+ empresas</span>
+            <span className="text-sm font-medium">Simplifica tus procesos de RRHH</span>
           </div>
         </div>
 
@@ -68,7 +84,9 @@ export default function Home() {
             </div>
 
             <div className="mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Bienvenido de nuevo</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                Bienvenido de nuevo
+              </h2>
               <p className="text-sm text-muted-foreground">
                 Introduce tus credenciales para acceder al portal de gestión.
               </p>
@@ -91,14 +109,17 @@ export default function Home() {
             <form action={formAction} className="space-y-4">
               {/* Username */}
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="username" className="text-xs font-semibold uppercase tracking-wider">
+                <Label
+                  htmlFor="username"
+                  className="text-xs font-semibold uppercase tracking-wider"
+                >
                   Usuario
                 </Label>
                 <Input
                   id="username"
                   name="username"
                   type="text"
-                  placeholder="nombre.usuario"
+                  placeholder="Nombre de usuario"
                   className="w-full"
                   required
                   disabled={isPending}
@@ -108,7 +129,10 @@ export default function Home() {
               {/* Contraseña con ojo */}
               <div className="flex flex-col gap-1.5">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider">
+                  <Label
+                    htmlFor="password"
+                    className="text-xs font-semibold uppercase tracking-wider"
+                  >
                     Contraseña
                   </Label>
                 </div>
@@ -117,7 +141,7 @@ export default function Home() {
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
+                    placeholder="Contraseña"
                     className="w-full pr-10"
                     required
                     disabled={isPending}
@@ -150,8 +174,11 @@ export default function Home() {
             {/* Footer */}
             <div className="mt-6 pt-6 border-t border-border text-center">
               <p className="text-sm text-muted-foreground">
-                ¿No tienes una cuenta?{' '}
-                <Link href="#" className="text-primary font-semibold hover:underline">
+                ¿No tienes una cuenta?{" "}
+                <Link
+                  href="#"
+                  className="text-primary font-semibold hover:underline"
+                >
                   Contacta al Administrador
                 </Link>
               </p>
